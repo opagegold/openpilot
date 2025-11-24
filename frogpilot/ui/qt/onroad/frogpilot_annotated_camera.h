@@ -19,6 +19,7 @@ public:
   void paintAdjacentPaths(QPainter &p, SubMaster &sm, SubMaster &fpsm);
   void paintBlindSpotPath(QPainter &p, SubMaster &sm, SubMaster &fpsm);
   void paintFrogPilotWidgets(QPainter &p, UIState &s, SubMaster &sm);
+  void paintLeadMetrics(QPainter &p, bool adjacent, QPointF *chevron, const cereal::RadarState::LeadData::Reader &lead_data);
   void updateState(const UIState &s, const FrogPilotUIState &fs);
 
   bool hideBottomIcons;
@@ -69,6 +70,7 @@ private:
   void updateSignals();
 
   int animationFrameIndex;
+  int desiredFollowDistance;
   int frogHopCount;
   int signalAnimationLength;
   int signalHeight;
@@ -99,6 +101,8 @@ private:
 
   QPoint cemStatusPosition;
   QPoint compassPosition;
+
+  QRect leadTextRect;
 
   QSharedPointer<QMovie> cemCurveIcon;
   QSharedPointer<QMovie> cemLeadIcon;
