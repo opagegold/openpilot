@@ -201,7 +201,7 @@ void FrogPilotAnnotatedCameraWidget::paintFrogPilotWidgets(QPainter &p, UIState 
     glowTimer.invalidate();
   }
 
-  if (!hideBottomIcons && (frogpilotCarState.getForceCoast())) {
+  if (!hideBottomIcons && (frogpilotCarState.getForceCoast() || frogpilotCarState.getPauseLongitudinal())) {
     paintLongitudinalPaused(p);
   }
 
