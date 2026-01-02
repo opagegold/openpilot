@@ -127,7 +127,7 @@ procs = [
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 
   # c3x lite
-  PythonProcess("beep", "selfdrive.controls.beep", c3x_lite, enabled=TICI),  
+  PythonProcess("beep", "selfdrive.controls.beep", enabled=TICI),  
 ]
 
 # FrogPilot variables
