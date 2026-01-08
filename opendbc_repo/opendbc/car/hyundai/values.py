@@ -501,10 +501,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.ANGLE_CONTROL,
   )
 
-  HYUNDAI_ST1_EV = HyundaiPlatformConfig(
+  HYUNDAI_ST1_EV = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai ST1 EV 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_k]))],
     CarSpecs(mass=2365, wheelbase=3.50, steerRatio=14.3),  # mass: from https://www.hyundai-motor.com.tw/clicktobuy/custin#spec_0, steerRatio: from learner
-    flags=HyundaiFlags.CAMERA_SCC | HyundaiFlags.EV
+    flags=HyundaiFlags.EV,
   )
 
   # Kia
