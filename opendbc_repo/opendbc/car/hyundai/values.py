@@ -857,6 +857,12 @@ class CAR(Platforms):
     CarSpecs(mass=2075, wheelbase=3.15, steerRatio=14.5, tireStiffnessFactor=0.7),
     flags=HyundaiFlags.LEGACY,
   )
+  KIA_K9_2022 = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Kia K9 2022", car_parts=CarParts.common([CarHarness.hyundai_k])),
+    ],
+    CarSpecs(mass=2625, wheelbase=3.1, steerRatio=16.02),
+  )
   KIA_EV_SK3 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia Soul EV 2019", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=1695, wheelbase=2.6, steerRatio=13.75),
