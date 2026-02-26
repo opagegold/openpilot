@@ -2,200 +2,36 @@
 import datetime
 import os
 import signal
-import subprocess
 import sys
 import traceback
-from multiprocessing import Process
 
 from cereal import log
 import cereal.messaging as messaging
-import openpilot.selfdrive.sentry as sentry
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params, ParamKeyType
+import openpilot.system.sentry as sentry
+from openpilot.common.params import Params, ParamKeyFlag
 from openpilot.common.text_window import TextWindow
-from openpilot.system.hardware import HARDWARE, PC
-from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
-from openpilot.selfdrive.manager.process import ensure_running, launcher
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.manager.helpers import unblock_stdout, write_onroad_params, save_bootlog
+from openpilot.system.manager.process import ensure_running
+from openpilot.system.manager.process_config import managed_processes
+from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata, terms_version, training_version
-
-def get_default_params():
-  default_params : list[tuple[str, str | bytes]] = [
-    ("CompletedTrainingVersion", "2"),
-    ("DisengageOnAccelerator", "0"),
-    ("GsmMetered", "1"),
-    ("HasAcceptedTerms", "2"),
-    ("LanguageSetting", "main_en"),
-    ("OpenpilotEnabledToggle", "1"),
-    ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
-    ("LongitudinalPersonalityMax", "3"),
-    ("AlwaysOnLateralEnabled", "1"),
-    ("SearchInput", "0"),
-    ("GMapKey", "0"),
-    ("SteerRatio", "0"),
-    ("MuteDoor", "0"),
-    ("MuteSeatbelt", "0"),
-    ("LongPitch", "0"),
-    ("EVTable", "0"),
-    ("TSS2Tune", "0"),
-    ("ShowDebugUI", "0"),
-    ("ShowDateTime", "1"),
-    ("ShowHudMode", "4"),
-    ("ShowSteerRotate", "1"),
-    ("ShowPathEnd", "1"),
-    ("ShowAccelRpm", "0"),
-    ("ShowTpms", "1"),
-    ("ShowSteerMode", "2"),
-    ("ShowDeviceState", "1"),
-    ("ShowCustomBrightness", "100"),
-    ("ShowConnInfo", "1"),
-    ("ShowLaneInfo", "1"),
-    ("ShowBlindSpot", "1"),
-    ("ShowGapInfo", "-1"),
-    ("ShowDmInfo", "1"),
-    ("ShowRadarInfo", "1"),
-    ("MixRadarInfo", "0"),
-    ("CarrotTest3", "0"),
-    ("ShowPathMode", "9"),
-    ("ShowPathColor", "13"),
-    ("ShowPathModeCruiseOff", "0"),
-    ("ShowPathColorCruiseOff", "19"),
-    ("ShowPathModeLane", "14"),
-    ("ShowPathColorLane", "13"),
-    ("ShowPathWidth", "100"),
-    ("ShowPlotMode", "0"),
-
-    ("AutoCruiseControl", "2"),    
-    ("AutoEngage", "0"),    
-    ("AutoResumeFromGasSpeed", "140"),
-    ("AutoCancelFromGasMode", "2"),    
-    ("AutoResumeFromBrakeReleaseTrafficSign", "0"),
-    ("SoftHoldMode", "0"),       
-
-    ("AutoSpeedUptoRoadSpeedLimit", "0"),
-
-    ("MapboxStyle", "0"),    
-
-    ("AutoCurveSpeedLowerLimit", "30"),
-    ("AutoCurveSpeedFactor", "120"),
-    ("AutoCurveSpeedAggressiveness", "100"),
-
-    ("AutoTurnControl", "0"),
-
-    ("AutoLaneChangeSpeed", "20"),
-    ("LaneChangeNeedTorque", "0"),
-    ("ManualSteeringOverride", "0"),
-    ("LaneChangeLaneCheck", "1"),
-
-    ("AutoTurnControlSpeedLaneChange", "60"),
-    ("AutoTurnControlSpeedTurn", "20"),
-    ("AutoTurnControlTurnEnd", "6"),
-    ("AutoTurnMapChange", "0"),
-
-    ("AutoNaviSpeedCtrl", "1"),
-    ("AutoNaviSpeedCtrlEnd", "7"),
-    ("AutoNaviSpeedBumpTime", "1"),
-    ("AutoNaviSpeedBumpSpeed", "35"),
-    ("AutoNaviSpeedSafetyFactor", "105"),
-    ("AutoNaviSpeedDecelRate", "200"),
-
-    ("StartAccelApply", "0"),
-    ("StopAccelApply", "0"),
-    ("StoppingAccel", "-40"),
-
-    ("StopDistanceCarrot", "550"), 
-    ("ComfortBrake", "250"), 
-    ("TrafficStopDistanceAdjust", "150"), 
-    ("ALeadTauPos", "120"), 
-    ("ALeadTauNeg", "60"), 
-    ("ALeadTauThreshold", "40"), 
-    ("CruiseButtonMode", "0"),      
-    ("CruiseButtonTest1", "8"),      
-    ("CruiseButtonTest2", "30"),      
-    ("CruiseButtonTest3", "1"),      
-    ("CruiseSpeedUnit", "10"),
-    ("MyDrivingMode", "3"),      
-    ("MySafeModeFactor", "80"),      
-    ("MyEcoModeFactor", "90"),  
-    ("CruiseMaxVals1", "200"),
-    ("CruiseMaxVals2", "160"),
-    ("CruiseMaxVals3", "130"),
-    ("CruiseMaxVals4", "110"),
-    ("CruiseMaxVals5", "95"),
-    ("CruiseMaxVals6", "80"),
-    ("CruiseMinVals", "140"),
-    ("MyHighModeFactor", "100"),
-    ("CruiseSpeedMin", "10"),
-    ("LongitudinalTuningKpV", "100"),     
-    ("LongitudinalTuningKiV", "0"),     
-    ("LongitudinalTuningKf", "100"),     
-    ("EnableRadarTracks", "0"),      
-    ("EnableAVM", "0"),      
-    ("SccConnectedBus2", "0"),
-    ("CanfdHDA2", "0"),
-    ("SoundVolumeAdjust", "100"),
-    ("SoundVolumeAdjustEngage", "10"),
-    ("CarrotCountDownSpeed", "10"),
-    ("StartRecord", "0"),
-    ("StopRecord", "0"),
-    ("TFollowSpeedAdd", "10"),
-    ("TFollowSpeedAddM", "0"),
-    ("TFollowLeadCarSpeed", "0"),
-    ("TFollowLeadCarAccel", "0"),
-    ("TFollowGap1", "110"),
-    ("TFollowGap2", "120"),
-    ("TFollowGap3", "140"),
-    ("TFollowGap4", "160"),
-    ("HapticFeedbackWhenSpeedCamera", "0"),       
-    ("CruiseEcoControl", "2"),
-    ("UseLaneLineSpeed", "1"),    
-    ("UseLaneLineCurveSpeed", "0"),    
-    ("UseLaneLineSpeedApply", "0"),    
-    ("AdjustLaneOffset", "0"),    
-    ("AdjustCurveOffset", "0"),    
-    ("AdjustLaneTime", "13"),    
-    ("PathOffset", "0"),  
-    ("MaxAngleFrames", "89"),       
-    ("LateralTorqueCustom", "0"),       
-    ("LateralTorqueAccelFactor", "2500"),       
-    ("LateralTorqueFriction", "100"),
-    ("LateralTorqueKpV", "100"),
-    ("LateralTorqueKiV", "15"),
-    ("LateralTorqueKf", "100"),
-    ("CustomSteerMax", "0"),       
-    ("CustomSteerDeltaUp", "0"),       
-    ("CustomSteerDeltaDown", "0"),       
-    ("SpeedFromPCM", "1"),       
-    ("MaxTimeOffroadMin", "60"),       
-    ("SteerActuatorDelay", "50"),       
-    ("CruiseOnDist", "0"),
-    ("MSLCEnabled", "0"),
-    ("NoLogging", "0"),
-    ("HotspotOnBoot", "0"),
-
-    ("MTSCAggressiveness", "100"),
-    ("MTSCCurvatureCheck", "1"),
-    ("MTSCEnabled", "0"),
-    ("NNFF", "0"),
-    ("NNFFLite", "0"),
-  ]
-  return default_params
+from openpilot.system.hardware.hw import Paths
 
 def set_default_params():
   params = Params()
-  default_params = get_default_params()
-  try:
-    default_params.remove(("GMapKey", "0"))
-    defulat_params.remove(("CompletedTrainingVersion", "0"))
-    default_params.remove(("LanguageSetting", "main_en"))
-    default_params.remove(("GsmMetered", "1"))
-  except ValueError:
-    pass
-  for k, v in default_params:
-    params.put(k, v)
-    print(f"SetToDefault[{k}]={v}")
+  for k in params.all_keys():
+    default_value = params.get_default_value(k)
+    if default_value is not None:
+      params.put(k, default_value)
+      print(f"SetToDefault[{k}]={default_value}")
+
+def get_default_params_key():
+  return Params().all_keys()
+  #default_params = get_default_params()
+  #all_keys = [key for key, _ in default_params]
+  #return all_keys
 
 def manager_init() -> None:
   save_bootlog()
@@ -203,34 +39,32 @@ def manager_init() -> None:
   build_metadata = get_build_metadata()
 
   params = Params()
-  params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
-  params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
-  params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+  params.clear_all(ParamKeyFlag.CLEAR_ON_MANAGER_START)
+  params.clear_all(ParamKeyFlag.CLEAR_ON_ONROAD_TRANSITION)
+  params.clear_all(ParamKeyFlag.CLEAR_ON_OFFROAD_TRANSITION)
+  params.clear_all(ParamKeyFlag.CLEAR_ON_IGNITION_ON)
   if build_metadata.release_channel:
-    params.clear_all(ParamKeyType.DEVELOPMENT_ONLY)
-
-  default_params = get_default_params()
-
-  if not PC:
-    default_params.append(("LastUpdateTime", datetime.datetime.utcnow().isoformat().encode('utf8')))
+    params.clear_all(ParamKeyFlag.DEVELOPMENT_ONLY)
 
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
 
-  # set unset params
-  for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
+  # set unset params to their default value
+  for k in params.all_keys():
+    default_value = params.get_default_value(k)
+    if default_value is not None and params.get(k) is None:
+      params.put(k, default_value)
 
   # Create folders needed for msgq
   try:
-    os.mkdir("/dev/shm")
+    os.mkdir(Paths.shm_path())
   except FileExistsError:
     pass
   except PermissionError:
-    print("WARNING: failed to make /dev/shm")
+    print(f"WARNING: failed to make {Paths.shm_path()}")
 
-  # set version params
+  # set params
+  serial = HARDWARE.get_serial()
   params.put("Version", build_metadata.openpilot.version)
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
@@ -240,13 +74,13 @@ def manager_init() -> None:
   params.put("GitRemote", build_metadata.openpilot.git_origin)
   params.put_bool("IsTestedBranch", build_metadata.tested_channel)
   params.put_bool("IsReleaseBranch", build_metadata.release_channel)
+  params.put("HardwareSerial", serial)
 
   # set dongle id
   reg_res = register(show_spinner=True)
   if reg_res:
     dongle_id = reg_res
   else:
-    serial = params.get("HardwareSerial")
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
   os.environ['GIT_ORIGIN'] = build_metadata.openpilot.git_normalized_origin # Needed for swaglog
@@ -282,13 +116,6 @@ def manager_cleanup() -> None:
 
   cloudlog.info("everything is dead")
 
-def is_running_on_wsl2():
-  try:
-    with open('/proc/version', 'r') as f:
-      contents = f.read()
-      return 'WSL2' in contents or 'Ubuntu' in contents
-  except FileNotFoundError:
-    return False
 
 def manager_thread() -> None:
   cloudlog.bind(daemon="manager")
@@ -298,25 +125,27 @@ def manager_thread() -> None:
   params = Params()
 
   ignore: list[str] = []
-  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
+  if params.get("DongleId") in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")
   ignore += [x for x in os.getenv("BLOCK", "").split(",") if len(x) > 0]
 
-  #if params.get_bool("UseExternalNaviRoutes"):
-  #  ignore += ["navd"]
-  #elif not params.get_bool("UseExternalNaviRoutes"):
-  #  ignore += ["navi_route"]
-  sm = messaging.SubMaster(['deviceState', 'carParams'], poll='deviceState')
+  #if params.get_bool("HardwareC3xLite"):
+    #ignore += ["micd", "soundd", "loggerd"]
+    #params.put_bool("RecordAudio", False)
+
+  sm = messaging.SubMaster(['deviceState', 'carParams', 'pandaStates'], poll='deviceState')
   pm = messaging.PubMaster(['managerState'])
 
   write_onroad_params(False, params)
+  print(f"################# ignore process list: {ignore} #################")
   ensure_running(managed_processes.values(), False, params=params, CP=sm['carParams'], not_run=ignore)
 
   print_timer = 0
 
   started_prev = False
+  ignition_prev = False
 
   while True:
     sm.update(1000)
@@ -324,15 +153,20 @@ def manager_thread() -> None:
     started = sm['deviceState'].started
 
     if started and not started_prev:
-      params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
+      params.clear_all(ParamKeyFlag.CLEAR_ON_ONROAD_TRANSITION)
     elif not started and started_prev:
-      params.clear_all(ParamKeyType.CLEAR_ON_OFFROAD_TRANSITION)
+      params.clear_all(ParamKeyFlag.CLEAR_ON_OFFROAD_TRANSITION)
 
-    # update onroad params, which drives boardd's safety setter thread
+    ignition = any(ps.ignitionLine or ps.ignitionCan for ps in sm['pandaStates'] if ps.pandaType != log.PandaState.PandaType.unknown)
+    if ignition and not ignition_prev:
+      params.clear_all(ParamKeyFlag.CLEAR_ON_IGNITION_ON)
+
+    # update onroad params, which drives pandad's safety setter thread
     if started != started_prev:
       write_onroad_params(started, params)
 
     started_prev = started
+    ignition_prev = ignition
 
     ensure_running(managed_processes.values(), started, params=params, CP=sm['carParams'], not_run=ignore)
 
@@ -351,7 +185,7 @@ def manager_thread() -> None:
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False
     for param in ("DoUninstall", "DoShutdown", "DoReboot"):
-      if params.get_bool(param) and not is_running_on_wsl2():
+      if params.get_bool(param):
         shutdown = True
         params.put("LastManagerExitReason", f"{param} {datetime.datetime.now()}")
         cloudlog.warning(f"Shutting down manager - {param} set")
@@ -359,12 +193,17 @@ def manager_thread() -> None:
     if shutdown:
       break
 
-
 def main() -> None:
   manager_init()
-  os.system("python /data/openpilot/selfdrive/car/hyundai/values.py > /data/params/d/SupportedCars")
-  os.system("python /data/openpilot/selfdrive/car/gm/values.py > /data/params/d/SupportedCars_gm")
-  os.system("python /data/openpilot/selfdrive/car/toyota/values.py > /data/params/d/SupportedCars_toyota")
+  print(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python ../../opendbc/car/hyundai/values.py > {Params().get_param_path()}/SupportedCars")
+  os.system(f"python ../../opendbc/car/gm/values.py > {Params().get_param_path()}/SupportedCars_gm")
+  os.system(f"python ../../opendbc/car/toyota/values.py > {Params().get_param_path()}/SupportedCars_toyota")
+  os.system(f"python ../../opendbc/car/mazda/values.py > {Params().get_param_path()}/SupportedCars_mazda")
+  os.system(f"python ../../opendbc/car/honda/values.py > {Params().get_param_path()}/SupportedCars_honda")
+  os.system(f"python ../../opendbc/car/ford/values.py > {Params().get_param_path()}/SupportedCars_ford")
+  os.system(f"python ../../opendbc/car/tesla/values.py > {Params().get_param_path()}/SupportedCars_tesla")
+  os.system(f"python ../../opendbc/car/volkswagen/values.py > {Params().get_param_path()}/SupportedCars_volkswagen")
 
   if os.getenv("PREPAREONLY") is not None:
     return
