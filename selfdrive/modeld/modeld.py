@@ -316,9 +316,9 @@ def main(demo=False):
       vEgoStopping = params.get_float("VEgoStopping") * 0.01
       
     if custom_lat_delay > 0.0:
-      lat_delay = custom_lat_delay + lat_smooth_seconds
+      lat_delay = custom_lat_delay + lat_smooth_seconds + 0.1
     else:
-      lat_delay = sm["liveDelay"].lateralDelay + lat_smooth_seconds
+      lat_delay = sm["liveDelay"].lateralDelay + lat_smooth_seconds + 0.1
 
     # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
     while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
@@ -419,13 +419,15 @@ def main(demo=False):
       drivingdata_send.drivingModelData.meta.laneChangeState = DH.lane_change_state
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
-      modelv2_send.modelV2.meta.laneWidthLeft = float(DH.lane_width_left)
-      modelv2_send.modelV2.meta.laneWidthRight = float(DH.lane_width_right)
-      modelv2_send.modelV2.meta.distanceToRoadEdgeLeft = float(DH.distance_to_road_edge_left)
-      modelv2_send.modelV2.meta.distanceToRoadEdgeRight = float(DH.distance_to_road_edge_right)
+      modelv2_send.modelV2.meta.laneWidthLeft = float(DH.left.lane_width)
+      modelv2_send.modelV2.meta.laneWidthRight = float(DH.right.lane_width)
+      modelv2_send.modelV2.meta.distanceToRoadEdgeLeft = float(DH.left.dist_to_edge)
+      modelv2_send.modelV2.meta.distanceToRoadEdgeRight = float(DH.right.dist_to_edge)
       modelv2_send.modelV2.meta.desire = DH.desire
       modelv2_send.modelV2.meta.laneChangeProb = DH.lane_change_ll_prob
       modelv2_send.modelV2.meta.modelTurnSpeed = float(DH.model_turn_speed)
+      modelv2_send.modelV2.meta.laneChangeAvailableLeft = DH.lane_change_available_left
+      modelv2_send.modelV2.meta.laneChangeAvailableRight = DH.lane_change_available_right
 
       fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
