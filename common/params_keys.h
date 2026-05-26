@@ -196,7 +196,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"AutoNaviSpeedBumpTime", {PERSISTENT, INT, "1"}},
     {"AutoNaviSpeedBumpSpeed", {PERSISTENT, INT, "35"}},
     {"AutoNaviSpeedDecelRate", {PERSISTENT, INT, "120"}},
-    {"AutoNaviSpeedSafetyFactor", {PERSISTENT, INT, "105"}},
+    {"AutoNaviSpeedSafetyFactor", {PERSISTENT, INT, "100"}},
     {"AutoNaviCountDownMode", {PERSISTENT, INT, "2"}},
     {"TurnSpeedControlMode", {PERSISTENT, INT, "1"}},
 
@@ -229,7 +229,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"MyDrivingModeAuto", {PERSISTENT, INT, "0"}},
     {"TrafficLightDetectMode", {PERSISTENT, INT, "0"}},
 
-    {"SteerActuatorDelay", {PERSISTENT, INT, "0"}},
+    {"SteerActuatorDelay", {PERSISTENT, INT, "20"}},
     {"LatSmoothSec", {PERSISTENT, INT, "13"}},
     {"LatSuspendAngleDeg", {PERSISTENT, INT, "300"}},
     {"CruiseOnDist", {PERSISTENT, INT, "400"}},
@@ -266,7 +266,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"CanfdDebug", {PERSISTENT, INT, "0"}},
 
     {"SoundVolumeAdjust", {PERSISTENT, INT, "100"}},
-    {"SoundVolumeAdjustEngage", {PERSISTENT, INT, "10"}},
+    {"SoundVolumeAdjustEngage", {PERSISTENT, INT, "100"}},
 
     {"TFollowGap1", {PERSISTENT, INT, "110"}},
     {"TFollowGap2", {PERSISTENT, INT, "120"}},
@@ -282,7 +282,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"TrafficStopDistanceAdjust", {PERSISTENT, INT, "-150"}},
 
     {"HapticFeedbackWhenSpeedCamera", {PERSISTENT, INT, "0"}},
-    {"UseLaneLineSpeed", {PERSISTENT, INT, "0"}},
+    {"UseLaneLineSpeed", {PERSISTENT, INT, "21"}},
     {"UseLaneLineCurveSpeed", {PERSISTENT, INT, "0"}},
 
     {"AdjustLaneOffset", {PERSISTENT, INT, "0"}},
@@ -318,12 +318,12 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"CustomSteerDeltaUpLC", {PERSISTENT, INT, "0"}},
     {"CustomSteerDeltaDownLC", {PERSISTENT, INT, "0"}},
 
-    {"SpeedFromPCM", {PERSISTENT, INT, "2"}},
+    {"SpeedFromPCM", {PERSISTENT, INT, "1"}},
     {"MaxTimeOffroadMin", {PERSISTENT, INT, "60"}},
 
-    {"DisableDM", {PERSISTENT, INT, "0"}},
-    {"MuteDoor", {PERSISTENT, INT, "0"}},
-    {"MuteSeatbelt", {PERSISTENT, INT, "0"}},
+    {"DisableDM", {PERSISTENT, INT, "1"}},
+    {"MuteDoor", {PERSISTENT, INT, "1"}},
+    {"MuteSeatbelt", {PERSISTENT, INT, "1"}},
 
     {"CarrotException", {CLEAR_ON_MANAGER_START, STRING}},
 
@@ -334,7 +334,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"ActivateCruiseAfterBrake", {CLEAR_ON_MANAGER_START, INT, "0"}},
 
     {"CustomSR", {PERSISTENT, INT, "0"}},
-    {"SteerRatioRate", {PERSISTENT, INT, "100"}},
+    {"SteerRatioRate", {PERSISTENT, INT, "90"}},
 
     {"SoftRestartTriggered", {CLEAR_ON_MANAGER_START, INT}},
 
@@ -343,6 +343,6 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"NNFFLite", {PERSISTENT, INT, "0"}},
     {"NNFFModelName", {CLEAR_ON_OFFROAD_TRANSITION, STRING}},
 
-    {"HardwareC3xLite", {PERSISTENT, INT, "0"}},
+    {"HardwareC3xLite", {PERSISTENT, INT, "1"}},
     {"ShareData", {PERSISTENT, INT, "0"}},
 };
